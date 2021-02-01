@@ -7,10 +7,12 @@ import { createPosts, updatePosts } from '../../actions/posts';
 
 const Form = ({ currentId, setCurrentId }) => {
   const classes = useStyles();
-  const [postData, setPostData] = useState({ creator: "", title: "", message: "", tags: "", selectedFile: "" })
+  const [postData, setPostData] = useState({ title: "", message: "", tags: "", selectedFile: "" })
   const dispatch = useDispatch();
 
   const post = useSelector((state) => currentId ? state.posts.find((obj) => obj._id === currentId) : null);
+
+  const user = JSON.parse(localStorage.getItem('profile'));
 
   useEffect(() => {
     if (post) setPostData(post)
@@ -19,27 +21,36 @@ const Form = ({ currentId, setCurrentId }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (currentId) {
-      dispatch(updatePosts(currentId, postData))
+      dispatch(updatePosts(currentId, { ...postData, name: user?.result?.name }));
       clear();
     }
     else {
-      dispatch(createPosts(postData))
+      dispatch(createPosts({ ...postData, name: user?.result?.name }))
       clear();
     }
-
   }
 
   const clear = () => {
-    setCurrentId(null);
-    setPostData({ creator: "", title: "", message: "", tags: "", selectedFile: "" });
+    setCurrentId(0);
+    setPostData({ title: "", message: "", tags: "", selectedFile: "" });
   }
+
+  if(!user?.result?.name){
+     return(
+       <Paper className={classes.paper}>
+         <Typography variant="h6" align="center">
+           Please Sign In to create your own memories and like the others memories.
+         </Typography>
+       </Paper>
+     )
+  }
+
+
   return (
     <Paper className={classes.paper}>
       <form autoComplete="off" noValidate className={`${classes.root} ${classes.form}`} onSubmit={handleSubmit}>
         <Typography variant="h6">{currentId ? 'editing' : 'creating'} a memory</Typography>
-        <TextField name="creator" variant="outlined" label="Creator" fullWidth value={postData.creator}
-          onChange={(e) => setPostData({ ...postData, creator: e.target.value })}
-        />
+
         <TextField name="title" variant="outlined" label="title" fullWidth value={postData.title}
           onChange={(e) => setPostData({ ...postData, title: e.target.value })}
         />
@@ -52,7 +63,7 @@ const Form = ({ currentId, setCurrentId }) => {
         <FileBase
           type="file"
           multiple={false}
-          onDone={({ base64 }) => setPostData({ ...postData, selectedFile:base64 })}>
+          onDone={({ base64 }) => setPostData({ ...postData, selectedFile: base64 })}>
         </FileBase>
 
         <Button className={classes.buttonSubmit} variant="contained" color="primary" size="large" type="submit" fullWidth > Submit</Button>
